@@ -7,6 +7,8 @@ from path import Path
 
 from load_data import LoadIAM, Batch
 from model import Model
+import task as ml
+
 class Paths:
     char_list_text = '../mode/charList.txt'
     summary_file = '../model/summary.json'
@@ -20,6 +22,7 @@ def main():
     parser.add_argument('--data_dir', help='Directory of IAM dataset', type=Path, required=False)
     parser.add_argument('--fast', help='Load from LMDB', action='store_true')
     parser.add_argument('--line_mode', help='Train to read text lines instead of words', action='store_true')
+    parser.add_argument('--early_stopping', help='Early stopping epochs.', type=int, default=25)
 
     args = parser.parse_args()
     # choose train or validate IAM
@@ -35,6 +38,7 @@ def main():
         open(Paths.text_corpus, 'w').write(' '.join(data_loader.train_words + data_loader.validation_words))
 
         if args.mode == 'train':
-            model = Model()
+            model = Model(char_list)
+            ml.train(model, data_loader, args.line_mode, args.early_stopping)
 if __name__ == '__main__':
     main()

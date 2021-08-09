@@ -9,8 +9,8 @@ import lmdb
 import numpy as np
 from path import Path
 
-Sample = tuple('Sample', 'generated_text, file_path')
-Batch = tuple('Batch', 'imgs, generated_texts, batch_size')
+Sample = namedtuple('Sample', 'generated_text, file_path')
+Batch = namedtuple('Batch', 'imgs, generated_texts, batch_size')
 
 class LoadIAM:
     def __init__(self, data_dir, batch_size, data_split=0.90):
@@ -73,3 +73,26 @@ class LoadIAM:
         random.shuffle(self.train_samples)
         self.samples = self.train_samples
         self.current_set = 'train'
+
+    def has_next(self):
+        if self.current_set == 'train':
+            return self.current_index + self.batch_size <= len(self.samples)
+        else:
+            return self.current_index < len(self.samples)
+
+    def get_next(self):
+        batch_range = range(self.curr_idx, min(self.curr_idx + self.batch_size, len(self.samples)))
+
+        imgs = [self._get_img(i) for i in batch_range]
+        gt_texts = [self.samples[i].gt_text for i in batch_range]
+
+        self.curr_idx += self.batch_size
+        return Batch(imgs, gt_texts, len(imgs))
+
+    def get_it_info(self):
+        if self.current_set == 'train':
+            n_batches = int(np.floor(len(self.samples) / self.batch_size))
+        else:
+            n_batches = int(np.ceil(len(self.samples) / self.batch_size))
+        current_batch = self.current_index // self.batch_size + 1
+        return current_batch, n_batches
