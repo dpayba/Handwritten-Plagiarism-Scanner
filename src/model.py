@@ -93,3 +93,44 @@ class Model:
         _, loss_val = self.sess.run(evaluate_list, feed_dictionary)
         self.batches_trained += 1
         return loss_val
+
+    def output_text(self, ctc_output, batch_size):
+
+    # Also known as infer_batch
+    def recognize_text(self, batch, calc_probablity, text_probability):
+        n_batch_elements = len(batch.imgs)
+        evaluated_list = []
+
+        evaluated_list.append(self.decoder)
+
+        if self.dump or calc_probablity:
+            evaluated_list.append(self.ctc_3_dimension)
+
+        max_text_length = batch.imgs[0].shape[0] // 4
+
+        # dictionary of tensors
+        feed_dict = {self.input_images: batch.imgs, self.seq_len: [max_text_length] * n_batch_elements,
+                     self.is_train: False}
+
+        # evaluate model
+        evaluated_result = self.sess.run(evaluated_list, feed_dict)
+
+        decoded = evaluated_result[0]
+        texts = self.output_text(decoded, n_batch_elements)
+
+        # feed RNN output and recognized text to ctc loss for probability
+        probs = None
+        if calc_probablity:
+            sparse = self.to_sparse(batch.generated_texts) if text_probability else self.to_sparse(texts)
+            ctc_input = evaluated_result[1]
+            evaluated_list = self.loss_per_element
+            feed_dict = {self.saved_ctc_input: ctc_input, self.gt_texts: sparse,
+                         self.seq_len: [max_text_length] * n_batch_elements, self.is_train: False}
+            loss_values = self.sess.run(evaluated_list, feed_dict)
+            probs = np.exp(-loss_values)
+
+        return texts, probs
+
+    def save_model(self):
+        self.snap_ID += 1
+        self.saver.save(self.sess, '../model/snapshot', self.snap_ID)

@@ -96,3 +96,9 @@ class LoadIAM:
             n_batches = int(np.ceil(len(self.samples) / self.batch_size))
         current_batch = self.current_index // self.batch_size + 1
         return current_batch, n_batches
+
+    def switch_to_validate(self):
+        self.data_augmentation = False
+        self.current_index = 0
+        self.samples = self.validation_samples
+        self.current_set = 'val'
