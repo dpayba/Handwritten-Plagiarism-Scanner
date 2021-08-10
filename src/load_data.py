@@ -13,20 +13,16 @@ Sample = namedtuple('Sample', 'generated_text, file_path')
 Batch = namedtuple('Batch', 'imgs, generated_texts, batch_size')
 
 class LoadIAM:
-    def __init__(self, data_dir, batch_size, data_split=0.90):
+    def __init__(self, data_dir: Path, batch_size: int,
+                 data_split: float=0.95):
         assert(data_dir.exists())
-
-        fast = True
-        self.fast = fast
-        if fast:
-            self.env = lmdb.open(str(data_dir / 'lmdb'), readonly=True)
 
         self.data_augmentation = False
         self.cur_index = 0
         self.batch_size = batch_size
         self.samples = []
 
-        f = open(data_dir / 'get_text/words.txt')
+        f = open(data_dir / 'gt/words.txt')
         chars = set()
         # filter bad images
         bad_images = ['a01-117-05-02', 'r06-022-03-05']
@@ -34,12 +30,12 @@ class LoadIAM:
             if not line or line[0] == '#':
                 continue
 
-            line_split = line.strip().split('')
+            line_split = line.strip().split(' ')
             assert len(line_split) >= 9
 
             file_name_split = line_split[0].split('-')
             file_name_subdirectory1 = file_name_split[0]
-            file_name_subdirectory2 = file_name_split[0]
+            file_name_subdirectory2 = f'{file_name_split[0]}-{file_name_split[1]}'
             file_base_name = line_split[0] + '.png'
             file_name = data_dir / 'img' / file_name_subdirectory1 / file_name_subdirectory2 / file_base_name
 
@@ -60,8 +56,8 @@ class LoadIAM:
         self.validation_samples = self.samples[split_index:]
 
         # put words to lists
-        self.train_words = [x.gt_text for x in self.train_samples]
-        self.validation_words = [x.gt_text for x in self.validation_samples]
+        self.train_words = [x.generated_text for x in self.train_samples]
+        self.validation_words = [x.generated_text for x in self.validation_samples]
 
         self.train_set()
 
@@ -80,13 +76,17 @@ class LoadIAM:
         else:
             return self.current_index < len(self.samples)
 
+    def get_image(self, i):
+        image = cv2.imread(self.samples[i].file_path, cv2.IMREAD_GRAYSCALE)
+        return image
+
     def get_next(self):
-        batch_range = range(self.curr_idx, min(self.curr_idx + self.batch_size, len(self.samples)))
+        batch_range = range(self.current_index, min(self.current_index + self.batch_size, len(self.samples)))
 
-        imgs = [self._get_img(i) for i in batch_range]
-        gt_texts = [self.samples[i].gt_text for i in batch_range]
+        imgs = [self.get_image(i) for i in batch_range]
+        gt_texts = [self.samples[i].generated_text for i in batch_range]
 
-        self.curr_idx += self.batch_size
+        self.current_index += self.batch_size
         return Batch(imgs, gt_texts, len(imgs))
 
     def get_it_info(self):

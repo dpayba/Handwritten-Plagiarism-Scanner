@@ -1,11 +1,14 @@
 import cv2
 import numpy as np
 import random
+from typing import Tuple
 
 from load_data import Batch
 
 class Preprocessor:
-    def __init__(self, img_size, padding, width_dynamic, data_augmentation, line_mode):
+    def __init__(self, img_size: Tuple[int, int],
+                 padding: int=0, width_dynamic: bool=False,
+                 data_augmentation: bool=False, line_mode: bool=False):
         assert not (width_dynamic and data_augmentation)
         assert not (padding > 0 and not width_dynamic)
 
@@ -59,7 +62,7 @@ class Preprocessor:
             result_images.append(target_image)
         return Batch(result_images, res_get_texts, batch.batch_size)
 
-    def process_image(self, img):
+    def process_image(self, img: np.ndarray):
         if img is None:
             img = np.zeros(self.image_size[::-1])
 
@@ -92,8 +95,8 @@ class Preprocessor:
 
             # map image to target
             M = np.float32([[f_x, 0, tx], [0, f_y, ty]])
-            target = np.ones(self.image_size[::-1] * 255)
-            img = cv2.warpAffine(img, M, dsize=self.img_size, dst=target, borderMode=cv2.BORDER_TRANSPARENT)
+            target = np.ones(self.image_size[::-1]) * 255
+            img = cv2.warpAffine(img, M, dsize=self.image_size, dst=target, borderMode=cv2.BORDER_TRANSPARENT)
 
             if random.random() < 0.5:
                 img = img * (0.25 + random.random() * 0.75)
@@ -103,8 +106,8 @@ class Preprocessor:
                 img = 255 - img
 
         else:
-            if self.dynamic_width:
-                ht = self.img_size[1]
+            if self.width_dynamic:
+                ht = self.image_size[1]
                 h, w = img.shape
                 f = ht / h
                 wt = int(f * w + self.padding)
@@ -112,7 +115,7 @@ class Preprocessor:
                 tx = (wt - w * f) / 2
                 ty = 0
             else:
-                wt, ht = self.img_size
+                wt, ht = self.image_size
                 h, w = img.shape
                 f = min(wt / w, ht / h)
                 tx = (wt - w * f) / 2
@@ -130,13 +133,25 @@ class Preprocessor:
         img = img / 255 - 0.5
         return img
 
+    @staticmethod
+    def truncate_label(text, max_text_length):
+        cost = 0
+        for i in range(len(text)):
+            if i != 0 and text[i] == text[i-1]:
+                cost += 2
+            else:
+                cost += 1
+            if cost > max_text_length:
+                return text[:i]
+        return text
+
     def process_batch(self, batch):
         if self.line_mode:
             batch = self.simulate_text_line(batch)
 
         res_images = [self.process_image(img) for img in batch.imgs]
         max_text_len = res_images[0].shape[0] // 4
-        res_gt_texts = [self._truncate_label(gt_text, max_text_len) for gt_text in batch.gt_texts]
+        res_gt_texts = [self.truncate_label(gt_text, max_text_len) for gt_text in batch.generated_texts]
         return Batch(res_images, res_gt_texts, batch.batch_size)
 
 def main():
@@ -144,6 +159,11 @@ def main():
 
     img = cv2.imread('../data/test.png', cv2.IMREAD_GRAYSCALE)
     img_augmented = Preprocessor((256, 32), data_augmentation=True).process_image(img)
+    plt.subplot(121)
+    plt.imshow(img, cmap='gray')
+    plt.subplot(122)
+    plt.imshow(cv2.transpose(img_augmented) + 0.5, 'gray', 0, 1)
+    plt.show()
 
 if __name__ == '__main__':
     main()
