@@ -65,7 +65,7 @@ USAGE
 * ```cd ../src```
 3. Execute main code
 * ```python main.py --image1 ../data/image4.png --image2 ../data/line.png```
-
+<br></br>
 ### Training Model
 1. Download the IAM dataset from [here](https://fki.tic.heia-fr.ch/databases/iam-handwriting-database)
 2. Download ```data/words.tgz```
