@@ -1,14 +1,10 @@
-import argparse
 import json
-from typing import Tuple, List
 import os
 
 import cv2
 import editdistance
-from path import Path
 
-from load_data import LoadIAM, Batch
-from model import Model
+from load_data import Batch
 from preprocessor import Preprocessor
 
 

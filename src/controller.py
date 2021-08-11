@@ -1,11 +1,8 @@
 import argparse
-import json
-from typing import Tuple, List
 
-import cv2
 from path import Path
 
-from load_data import LoadIAM, Batch
+from load_data import LoadIAM
 from model import Model
 import task as ml
 from task import Paths

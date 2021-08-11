@@ -2,7 +2,6 @@ import os
 import argparse
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from decimal import Decimal
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--file1_dir', help='Path to first comparison file', required=True)
