@@ -1,6 +1,7 @@
 import argparse
 import json
 from typing import Tuple, List
+import os
 
 import cv2
 import editdistance
@@ -9,6 +10,7 @@ from path import Path
 from load_data import LoadIAM, Batch
 from model import Model
 from preprocessor import Preprocessor
+
 
 class Paths:
     char_list_path = '../model/charList.txt'
@@ -98,7 +100,7 @@ def train(model, data_loader, line_mode, early_stopping):
             print(f'No more improvement since {early_stopping} epochs. Training stopped')
             break
 
-def infer(model, fn_image):
+def infer(model, fn_image, output_dir):
     image = cv2.imread(fn_image, cv2.IMREAD_GRAYSCALE)
     assert image is not None
 
@@ -109,3 +111,10 @@ def infer(model, fn_image):
     recognized, probability = model.recognize_text(batch, True)
     print(f'Recognized: "{recognized[0]}"')
     print(f'Probability: {probability[0]}')
+
+    parent_dir = os.path.dirname(output_dir)
+    if not os.path.isdir(parent_dir):
+        os.mkdir(parent_dir)
+    file = open(output_dir, 'w')
+    file.write(recognized[0])
+    file.close()
