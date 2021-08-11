@@ -148,7 +148,7 @@ class Model:
         return [''.join([self.char_list[c] for c in labelStr]) for labelStr in label_s]
 
     """ Also known as infer_batch"""
-    def recognize_text(self, batch, calc_probablity, text_probability):
+    def recognize_text(self, batch: Batch, calc_probablity: bool=False, text_probability: bool=False):
         n_batch_elements = len(batch.imgs)
         evaluated_list = []
 

@@ -13,7 +13,7 @@ from task import Paths
 def main():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--mode', choices=['train', 'validate', 'infer'])
+    parser.add_argument('--mode', choices=['train', 'validate', 'infer'], default='infer')
     parser.add_argument('--batch_size', help='Batch Size', type=int, default=100)
     parser.add_argument('--data_dir', help='Directory of IAM dataset', type=Path, required=False)
     parser.add_argument('--fast', help='Load from LMDB', action='store_true')
